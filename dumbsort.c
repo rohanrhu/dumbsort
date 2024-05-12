@@ -12,14 +12,16 @@
 #include <string.h>
 #include <time.h>
 
-int* random_array(int size, int min, int max) {
-    int* array = malloc(size * sizeof(int));
+void random_array(int* array, int size, int min, int max) {
+    FILE* urandom = fopen("/dev/urandom", "r");
+    int number;
 
     for (int i = 0; i < size; i++) {
-        array[i] = rand() % (max - min + 1) + min;
+        fread(&number, sizeof(int), 1, urandom);
+        array[i] = abs((number % (max - min + 1)) + min);
     }
 
-    return array;
+    fclose(urandom);
 }
 
 void swap(int* a, int* b) {
@@ -51,22 +53,24 @@ void quick_sort(int* array, int low, int high) {
     }
 }
 
-void dumb_sort(int* array, int size, int* buffer, int max) {
-    for (int i = 0; i < size; i++) {
-        buffer[array[i]] = array[i];
-    }
+int* dumb_sort_new(int max) {
+    int* buffer = malloc(max * sizeof(int));
+    return buffer;
+}
 
+void dumb_sort(int* array, int size, int* buffer, int max) {
+    memset(buffer, -1, max * sizeof(int));
+    for (int i = 0; i < size; i++) buffer[array[i]] = array[i];
     for (int i = 0, j = 0; i < max; i++) {
-        if (buffer[i] != -1) {
-            buffer[j++] = buffer[i];
-        }
+        if (j == size) break;
+        if (buffer[i] != -1) buffer[j++] = buffer[i];
     }
 }
 
 int main() {
-    int size = 1000000;
+    int size = 100000;
     int max = 2147483;
-    int* array;
+    int* array = malloc(size * sizeof(int));
 
     int tests = 10;
 
@@ -74,7 +78,7 @@ int main() {
     int end;
     
     start = clock();
-    int* dumb_sorted = malloc(max * sizeof(int));
+    int* dumb_sorted = dumb_sort_new(max);
     end = clock();
 
     int init_time = end - start;
@@ -83,7 +87,7 @@ int main() {
 
     start = clock();
     for (int i = 0; i < tests; i++) {
-        array = random_array(size, 0, max);
+        random_array(array, size, 0, max);
         dumb_sort(array, size, dumb_sorted, max);
     }
     end = clock();
@@ -92,7 +96,7 @@ int main() {
 
     start = clock();
     for (int i = 0; i < tests; i++) {
-        array = random_array(size, 0, max);
+        random_array(array, size, 0, max);
         quick_sort(array, 0, size - 1);
     }
     end = clock();
